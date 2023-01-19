@@ -6,27 +6,29 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth');
+const cors = require('cors');
 
 const User = require('./model/user');
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 // Register
 app.post('/register', async (req, res) => {
   try {
     // Get user input
-    const { first_name, last_name, email, password } = req.body;
+    const { username, password } = req.body;
 
     // Validate use input
-    if (!(email && password && first_name && last_name)) {
+    if (!(password && username)) {
       res.status(400).send('All input is required');
     }
 
     // Check if user already
     // Validate if user exist in out database
-    const userExist = await User.findOne({ email });
+    const userExist = await User.findOne({ username });
 
     if (userExist) {
       return res.status(409).send('User already exist. Please login');
@@ -36,9 +38,7 @@ app.post('/register', async (req, res) => {
     encryptedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      first_name,
-      last_name,
-      email: email.toLowerCase(),
+      username,
       password: encryptedPassword,
     });
 
@@ -46,7 +46,6 @@ app.post('/register', async (req, res) => {
     const token = jwt.sign(
       {
         user_id: user._id,
-        email,
       },
       process.env.TOKEN_KEY,
       {
@@ -68,21 +67,21 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     // get user input
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!(email && password)) {
+    if (!(username && password)) {
       res.status(400).send('All input is required');
     }
 
     // Validate if user exist in database
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ username });
 
     if (user && (await bcrypt.compare(password, user.password))) {
       // Create TOKEN
       const token = jwt.sign(
         {
           user_id: user._id,
-          email,
+          username,
         },
         process.env.TOKEN_KEY,
         {
