@@ -1,22 +1,15 @@
-require('dotenv').config();
-require('./config/database').connect();
-
 const express = require('express');
+const app = express();
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const auth = require('./middleware/auth');
-const cors = require('cors');
 
-const User = require('./model/user');
-
-const app = express();
-
-app.use(express.json());
-app.use(cors());
+const userRoute = express.Router();
+const User = require('../model/user');
+const auth = require('../middleware/auth');
 
 // Register
-app.post('/register', async (req, res) => {
+userRoute.route('/register').post(async (req, res) => {
   try {
     // Get user input
     const { username, password } = req.body;
@@ -64,7 +57,7 @@ app.post('/register', async (req, res) => {
 });
 
 // Login
-app.post('/login', async (req, res) => {
+userRoute.route('/login').post(async (req, res) => {
   try {
     // get user input
     const { username, password } = req.body;
@@ -101,8 +94,9 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.post('/welcome', auth, (req, res) => {
-  res.status(200).send('Welcome to our server!');
+// Access token
+userRoute.route('/auth').post(auth, (req, res) => {
+  res.status(200).send('Welcome to server!');
 });
 
-module.exports = app;
+module.exports = userRoute;
